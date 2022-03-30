@@ -9,23 +9,36 @@ bot = telebot.TeleBot(conf.TOKEN)  # создаем экземпляр бота
 
 #################### рифмуем!!!! ############################
 
-
+@bot.message_handler()
 def rhyme(message):
+    print(message.text)
     with open('result.txt', 'r', encoding='utf') as result:
         tekstcel = result.read()
-        tekst = message.lower()
-        wzor = '[уеыаоэяиюё][цкнгшщзхфвпрлджчсмтбъь]*[уеыаоэяиюё][цкнгшщзхфвпрлджчсмтбъь]*[^а-я]*$'
-        wzor2 = '[уеыаоэяиюё][цкнгшщзхфвпрлджчсмтбъь]*[уеыаоэяиюё][цкнгшщзхфвпрлджчсмтбъь]*'
+        print(tekstcel)
+        tekst = message.text.lower()
+        wzor = '(([уеыаоэяиюё][йцкнгшщзхфвпрлджчсмтбъь]*)*[уеыаоэяиюё][йцкнгшщзхфвпрлджчсмтбъь]*[^а-я]*)$'
+        wzor2 = '(([уеыаоэяиюё][йцкнгшщзхфвпрлджчсмтбъь]*)*[уеыаоэяиюё][йцкнгшщзхфвпрлджчсмтбъь]*)'
         result = re.findall(wzor, tekst)
-        key = result[-1]
-        key = re.findall(wzor2, key)[0]
-        key = '.*' + key + '[^а-я]*$'
-        result2 = re.findall(key, tekstcel)[0]
-        return result2
+        print(result)
+        key = result[0][0]
+        print(key)
+        key = re.findall(wzor2, key)[0][0]
+        print(key)
+        key = '(.*' + key + '[^а-я]*)\n'
+        print(key)
+        result2 = re.findall(key, tekstcel)
+        print(result2)
+        if len(result2) == 0:
+            bot.send_message(message.chat.id, 'пізда тобі а не рифма')
+        else:
+            result2 = result2[0]
+            bot.send_message(message.chat.id, result2)
+        # return result2
 
 
 ############################################################
 
+FILENAME = 'result.txt'
 
 def lemma_stuff(FILENAME, USERS_INPUT):
     with io.open(FILENAME, 'r', encoding = 'utf8') as f:
@@ -55,12 +68,6 @@ def lemma_stuff(FILENAME, USERS_INPUT):
 
 #############################################################
 
-
-# # этот обработчик реагирует на любое сообщение
-# @bot.message_handler(content_types=["text"])
-# def send_reason(message):
-#     bot.send_message(message.chat.id, rhyme(message.text))
-
 @bot.message_handler(commands=["start"])
 def repeat_all_messages(message):
     # создаем клавиатуру
@@ -84,22 +91,26 @@ memory=0
 def callback_inline(call, memory=0):
     if call.message:
         if call.data == "button1":
-            bot.send_message(call.message.chat.id, "Вы обратились за помощью к Поэтессе. Пришлите любое сообщение,"
+            message = bot.send_message(call.message.chat.id, "Вы обратились за помощью к Поэтессе. Пришлите любое сообщение,"
                                                    "и поэтесса подберёт вам 1 причину бросить парня __в рифму__ ^^")
+            print(message)
+            bot.register_next_step_handler(message, rhyme)
             memory = 1
 
         if call.data == "button2":
-            bot.send_message(call.message.chat.id, "Вы обратились за помощью к Следопытке. Пришлите 1 (одно) слово,"
+            message = bot.send_message(call.message.chat.id, "Вы обратились за помощью к Следопытке. Пришлите 1 (одно) слово,"
                                                    "и следопытка найдёт 1 причину бросить парня, в которой"
                                                    "будет ваше слово ;)")
+            print(message)
+            bot.register_next_step_handler(message, rhyme)
             memory = 2
     return memory
 
 @bot.message_handler(content_types=["text"])
 def send_reason(message):
-    if memory = 1:
+    if memory == 1:
         bot.send_message(message.chat.id, rhyme(message.text))
-    if memory = 2:
+    if memory == 2:
         bot.send_message(message.chat.id, lemma_stuff('results.txt', message.text))
 
 if __name__ == '__main__':
